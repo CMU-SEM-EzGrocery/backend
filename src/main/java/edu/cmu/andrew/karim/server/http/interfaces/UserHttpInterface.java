@@ -35,23 +35,30 @@ public class UserHttpInterface extends HttpInterface{
     @Produces({MediaType.APPLICATION_JSON})
     public AppResponse postUsers(Object request){
 
-        try{
+        try {
             JSONObject json = null;
             json = new JSONObject(ow.writeValueAsString(request));
 
-            User newuser = new User(
-                    null,
-                    json.getString("username"),
-                    json.getString("password"),
-                    json.getString("email")
-            );
-            UserManager.getInstance().createUser(newuser);
-            return new AppResponse("Insert Successful");
+            // Generate Salt. The generated value can be stored in DB.
+            String salt = PasswordUtils.getSalt(30);
 
-        }catch (Exception e){
+            // Protect user's password. The generated value can be stored in DB.
+            String mySecurePassword = PasswordUtils.generateSecurePassword(json.getString("password"), salt);
+
+            User newUser = new User(
+                    json.getString("firstName"),
+                    json.getString("lastName"),
+                    json.getString("roleId"),
+                    json.getString("phoneNumber"),
+                    mySecurePassword,
+                    salt
+            );
+            UserManager.getInstance().createUser(newUser);
+            return new AppResponse("Insert new user Successful");
+
+        } catch (Exception e){
             throw handleException("POST users", e);
         }
-
     }
 
 
@@ -60,7 +67,7 @@ public class UserHttpInterface extends HttpInterface{
     @Produces({MediaType.APPLICATION_JSON})
     public AppResponse getUsers(@Context HttpHeaders headers){
 
-        try{
+        try {
             AppLogger.info("Got an API call");
             ArrayList<User> users = UserManager.getInstance().getUserList();
 
@@ -68,7 +75,7 @@ public class UserHttpInterface extends HttpInterface{
                 return new AppResponse(users);
             else
                 throw new HttpBadRequestException(0, "Problem with getting users");
-        }catch (Exception e){
+        } catch (Exception e){
             throw handleException("GET /users", e);
         }
 
@@ -76,19 +83,19 @@ public class UserHttpInterface extends HttpInterface{
     }
 
     @GET
-    @Path("/{userId}")
+    @Path("/{phoneNumber}")
     @Produces({MediaType.APPLICATION_JSON})
-    public AppResponse getSingleUser(@Context HttpHeaders headers, @PathParam("userId") String userId){
+    public AppResponse getSingleUser(@Context HttpHeaders headers, @PathParam("phoneNumber") String phoneNumber){
 
-        try{
+        try {
             AppLogger.info("Got an API call");
-            ArrayList<User> users = UserManager.getInstance().getUserById(userId);
+            ArrayList<User> users = UserManager.getInstance().getUserByPhone(phoneNumber);
 
             if(users != null)
                 return new AppResponse(users);
             else
                 throw new HttpBadRequestException(0, "Problem with getting users");
-        }catch (Exception e){
+        } catch (Exception e){
             throw handleException("GET /users/{userId}", e);
         }
 
@@ -97,26 +104,23 @@ public class UserHttpInterface extends HttpInterface{
 
 
     @PATCH
-    @Path("/{userId}")
+    @Path("/{phoneNumber}")
     @Consumes({ MediaType.APPLICATION_JSON})
     @Produces({ MediaType.APPLICATION_JSON})
-    public AppResponse patchUsers(Object request, @PathParam("userId") String userId){
+    public AppResponse patchUsers(Object request, @PathParam("phoneNumber") String phoneNumber){
 
         JSONObject json = null;
 
-        try{
+        try {
             json = new JSONObject(ow.writeValueAsString(request));
             User user = new User(
-                    userId,
-                    json.getString("username"),
-                    json.getString("password"),
-                    json.getString("email")
+                    phoneNumber
             );
 
             UserManager.getInstance().updateUser(user);
 
-        }catch (Exception e){
-            throw handleException("PATCH users/{userId}", e);
+        } catch (Exception e){
+            throw handleException("PATCH users/{phoneNumber}", e);
         }
 
         return new AppResponse("Update Successful");
@@ -126,19 +130,42 @@ public class UserHttpInterface extends HttpInterface{
 
 
     @DELETE
-    @Path("/{userId}")
+    @Path("/{phoneNumber}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
-    public AppResponse deleteUsers(@PathParam("userId") String userId){
+    public AppResponse deleteUsers(@PathParam("phoneNumber") String phoneNumber){
 
-        try{
-            UserManager.getInstance().deleteUser( userId);
+        try {
+            UserManager.getInstance().deleteUser(phoneNumber);
             return new AppResponse("Delete Successful");
-        }catch (Exception e){
-            throw handleException("DELETE users/{userId}", e);
+        } catch (Exception e) {
+            throw handleException("DELETE users/{phoneNumber}", e);
         }
-
     }
 
-
+    @GET
+    @Path("/login")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({MediaType.APPLICATION_JSON})
+    public AppResponse checkAuthentication(Object request){
+        JSONObject json = null;
+        UserManager userManager = UserManager.getInstance();
+        try {
+            json = new JSONObject(ow.writeValueAsString(request));
+            String phoneNumber = json.getString("phoneNumber");
+            //If there 0 or more than 1 users in the db, return failed
+            ArrayList<User> userArrayList = userManager.getUserByPhone(phoneNumber);
+            if(userArrayList.size() != 1) {
+                return new AppResponse("Failed");
+            }
+            boolean result = userManager
+                    .checkAuthentication(phoneNumber, json.getString("password"));
+            if(result)
+                return new AppResponse("Success");
+            else
+                return new AppResponse("Failed");
+        } catch (Exception e){
+            throw handleException("GET /users", e);
+        }
+    }
 }
