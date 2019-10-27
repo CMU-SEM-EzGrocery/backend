@@ -5,6 +5,7 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import edu.cmu.andrew.karim.server.exceptions.AppException;
 import edu.cmu.andrew.karim.server.exceptions.AppInternalServerException;
+import edu.cmu.andrew.karim.server.models.Address;
 import edu.cmu.andrew.karim.server.models.User;
 import edu.cmu.andrew.karim.server.utils.MongoPool;
 import edu.cmu.andrew.karim.server.utils.AppLogger;
@@ -17,6 +18,8 @@ import org.json.JSONObject;
 
 import java.lang.String;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class UserManager extends Manager {
     public static UserManager _self;
@@ -43,7 +46,14 @@ public class UserManager extends Manager {
                     .append("roleId", user.getRoleId())
                     .append("phoneNumber", user.getPhoneNumber())
                     .append("password", user.getPassword())
-                    .append("salt",user.getSalt());
+                    .append("salt", user.getSalt())
+                    .append("currency", user.getCurrency())
+                    .append("language", user.getLanguage())
+                    .append("rating", user.getRating())
+                    .append("address", user.getAddr().getAddress())
+                    .append("longitude", user.getAddr().getLongitude())
+                    .append("latitude", user.getAddr().getLatitude());
+
             if (newDoc != null)
                 userCollection.insertOne(newDoc);
             else
@@ -76,7 +86,7 @@ public class UserManager extends Manager {
         try {
             Bson filter = new Document("phoneNumber", phoneNumber);
             userCollection.deleteOne(filter);
-        }catch (Exception e){
+        } catch (Exception e){
             throw handleException("Delete User", e);
         }
     }
@@ -86,14 +96,24 @@ public class UserManager extends Manager {
             ArrayList<User> userList = new ArrayList<>();
             FindIterable<Document> userDocs = userCollection.find();
             for(Document userDoc: userDocs) {
+                Address addr = new Address(
+                        userDoc.getString("address"),
+                        userDoc.getString("longitude"),
+                        userDoc.getString("latitude")
+                );
                 User user = new User(
+                        userDoc.getObjectId("_id").toString(),
                         userDoc.getString("firstName"),
                         userDoc.getString("lastName"),
                         userDoc.getString("roleId"),
                         userDoc.getString("phoneNumber"),
                         userDoc.getString("password"),
-                        userDoc.getString("salt")
-                        );
+                        userDoc.getString("salt"),
+                        userDoc.getString("currency"),
+                        userDoc.getString("language"),
+                        userDoc.getString("rating"),
+                        addr
+                );
                 userList.add(user);
             }
             return new ArrayList<>(userList);
@@ -108,19 +128,67 @@ public class UserManager extends Manager {
             Bson filter = new Document("phoneNumber", phoneNumber);
             FindIterable<Document> userDocs = userCollection.find(filter);
             for(Document userDoc: userDocs) {
+                Address addr = new Address(
+                        userDoc.getString("address"),
+                        userDoc.getString("longitude"),
+                        userDoc.getString("latitude")
+                );
                 User user = new User(
+                        userDoc.getObjectId("_id").toString(),
                         userDoc.getString("firstName"),
                         userDoc.getString("lastName"),
                         userDoc.getString("roleId"),
                         userDoc.getString("phoneNumber"),
                         userDoc.getString("password"),
-                        userDoc.getString("salt")
+                        userDoc.getString("salt"),
+                        userDoc.getString("currency"),
+                        userDoc.getString("language"),
+                        userDoc.getString("rating"),
+                        addr
                 );
                 userList.add(user);
             }
             return new ArrayList<>(userList);
         } catch(Exception e) {
             throw handleException("Get User List", e);
+        }
+    }
+
+    public ArrayList<User> getHelperList(String currency, String language) throws AppException {
+        try{
+            ArrayList<User> userList = new ArrayList<>();
+            Map<String, Object> filterMap = new HashMap<>();
+            filterMap.put("roleId", "2");
+            filterMap.put("currency", currency);
+            filterMap.put("language", language);
+            Bson filter = new Document(filterMap);
+            BasicDBObject sortParams = new BasicDBObject();
+            sortParams.put("rating", -1);
+            FindIterable<Document> userDocs = userCollection.find(filter).sort(sortParams);
+            for(Document userDoc: userDocs) {
+                Address addr = new Address(
+                        userDoc.getString("address"),
+                        userDoc.getString("longitude"),
+                        userDoc.getString("latitude")
+                );
+                User user = new User(
+                        userDoc.getObjectId("_id").toString(),
+                        userDoc.getString("firstName"),
+                        userDoc.getString("lastName"),
+                        userDoc.getString("roleId"),
+                        userDoc.getString("phoneNumber"),
+                        userDoc.getString("password"),
+                        userDoc.getString("salt"),
+                        userDoc.getString("currency"),
+                        userDoc.getString("language"),
+                        userDoc.getString("rating"),
+                        addr
+                );
+                userList.add(user);
+            }
+            return new ArrayList<>(userList);
+        } catch (Exception e) {
+            throw handleException("Get Helper List", e);
         }
     }
     public boolean checkAuthentication(String phoneNumber, String password) throws AppException {
