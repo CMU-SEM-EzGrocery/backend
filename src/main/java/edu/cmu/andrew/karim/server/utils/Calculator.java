@@ -27,7 +27,7 @@ public class Calculator {
         double feeinDollar = driverFeeinDollar(start_lat,start_lng,end_lat,end_lng,startTime);
         if (currencyType ==
     }*/
-    private static double driverFeeinDollar(double start_lat, double start_lng, double end_lat, double end_lng, String startTime) {
+    public static double driverFeeinDollar(double start_lat, double start_lng, double end_lat, double end_lng, String startTime) {
         double mileRate = 0.2;
         int serviceFee = 2;
         int rushHourRate = 2;
@@ -74,27 +74,32 @@ public class Calculator {
 
     //TODO: language is a list
     //TODO: the currencyfield of a helper should be a list of currencies that he can accept, separated by ","
-    private static List<String> helperRecommendation(String requesterId, String start_lat, String start_lng) {
+    public static List<String> helperRecommendation(String requesterId, String start_lat, String start_lng) throws Exception {
         List<String> recommendedHelpers = new ArrayList<>();
         List<String> helperList = new ArrayList<>();
-        User requester = new User(requesterId);
+        UserManager userManager = new UserManager();
+        User requester = userManager.getUserByPhone(requesterId).get(0);
         //Requester Data
-        String requesterLanguage = "Chinese"; //requester.getLanguage();
+        String requesterLanguage = requester.getLanguage();
         String requesterCurrency = requester.getCurrency();
 
         UserManager um = new UserManager();
-        List<User> helpList = um.getHelperList(requesterCurrency,requesterLanguage);
+        try {
+            List<User> helpList = um.getHelperList(requesterCurrency,requesterLanguage);
 
-        //TODO: in future when we have more users in DB, the helpList will have a limitation size,like40
-        for (User helper:helpList) {
-            String helper_lat = helper.getAddress().getlat();
-            String helper_lng = helper.getAddress().getlng();
-            double helper_distance = distance(Double.parseDouble(start_lat), Double.parseDouble(start_lng), Double.parseDouble(helper_lat), Double.parseDouble(helper_lng));
-            if (helper_distance <= 5) {
-                recommendedHelpers.add(helper.getId());
-                if (recommendedHelpers.size() >= 10)
-                    break;
+            //TODO: in future when we have more users in DB, the helpList will have a limitation size,like40
+            for (User helper:helpList) {
+                String helper_lat = helper.getAddr().getLatitude();
+                String helper_lng = helper.getAddr().getLongitude();
+                double helper_distance = distance(Double.parseDouble(start_lat), Double.parseDouble(start_lng), Double.parseDouble(helper_lat), Double.parseDouble(helper_lng));
+                if (helper_distance <= 5) {
+                    recommendedHelpers.add(helper.getPhoneNumber());
+                    if (recommendedHelpers.size() >= 10)
+                        break;
+                }
             }
+        } catch(Exception e) {
+            throw new Exception(e);
         }
 
         return recommendedHelpers;
