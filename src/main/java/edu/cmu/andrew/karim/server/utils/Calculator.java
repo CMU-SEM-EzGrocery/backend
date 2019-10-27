@@ -1,6 +1,10 @@
 package edu.cmu.andrew.karim.server.utils;
 
+import edu.cmu.andrew.karim.server.managers.UserManager;
+import edu.cmu.andrew.karim.server.models.User;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Calculator {
@@ -17,7 +21,13 @@ public class Calculator {
     //Gross Uber Driver Pay Per Mile	$0.83
     //Gross Uber Driver Pay Per Trip	$8.90
     //So the calculation will be "fee = 0.2*distance*2 + rushHourFee + service Fee;
-    public static double driverFee(double start_lat, double start_lng, double end_lat, double end_lng, String startTime) {
+    //TODO: In frontEnd, when request, should ask requester to choose currencyType, with a default value as dollar.
+    //TODO: backend provide fee in dollar, frontend will call REST API to convert it to count in rupee or Yuan？？
+/*    public static double driverFee(double start_lat, double start_lng, double end_lat, double end_lng, String startTime, String currencyType) {
+        double feeinDollar = driverFeeinDollar(start_lat,start_lng,end_lat,end_lng,startTime);
+        if (currencyType ==
+    }*/
+    private static double driverFeeinDollar(double start_lat, double start_lng, double end_lat, double end_lng, String startTime) {
         double mileRate = 0.2;
         int serviceFee = 2;
         int rushHourRate = 2;
@@ -33,6 +43,8 @@ public class Calculator {
         return fee;
     }
 
+    //TODO: fee updated
+    //TODO: REST API for fee
     //in miles
     private static double distance(double lat1, double lon1, double lat2, double lon2) {
         if ((lat1 == lat2) && (lon1 == lon2)) {
@@ -52,17 +64,40 @@ public class Calculator {
     //Other factor taken into consideration is "helper availability, location(<5miles to start_addr), rating)
     //We will constraint the number of recommended helper to less than 10
     //As a summary, we find Helpers who
-    // 1. have same language background as the requester
+    // 1. Helper has the same language skill with requester (have overlapped language skills as the requester does)
     //And 2. The location of their address is 5 miles less away from the start_addr
-    //And 3. The overall list will be ordered by Rating high to low
+    //And 3. Helper has the same currency type with requester (The currency Type is in helper's acceptance list)
+    //And 4. The status of helper is "available for service"
+    //And 5. The overall list will be ordered by Rating high to low
     //System will have the most 10 or less high rated helpers
-    public static List<String> helperRecommendation(String requesterId, String start_addr, String rating) {
+    //Parameter requesterId is the phoneNumber of requester, which will be used to get the info of requester
+
+    //TODO: language is a list
+    //TODO: the currencyfield of a helper should be a list of currencies that he can accept, separated by ","
+    private static List<String> helperRecommendation(String requesterId, String start_lat, String start_lng) {
+        List<String> recommendedHelpers = new ArrayList<>();
         List<String> helperList = new ArrayList<>();
+        User requester = new User(requesterId);
+        //Requester Data
+        String requesterLanguage = "Chinese"; //requester.getLanguage();
+        String requesterCurrency = requester.getCurrency();
 
-        return helperList;
+        UserManager um = new UserManager();
+        List<User> helpList = um.getHelperList(requesterCurrency,requesterLanguage);
+
+        //TODO: in future when we have more users in DB, the helpList will have a limitation size,like40
+        for (User helper:helpList) {
+            String helper_lat = helper.getAddress().getlat();
+            String helper_lng = helper.getAddress().getlng();
+            double helper_distance = distance(Double.parseDouble(start_lat), Double.parseDouble(start_lng), Double.parseDouble(helper_lat), Double.parseDouble(helper_lng));
+            if (helper_distance <= 5) {
+                recommendedHelpers.add(helper.getId());
+                if (recommendedHelpers.size() >= 10)
+                    break;
+            }
+        }
+
+        return recommendedHelpers;
     }
-
-
-
 
 }
