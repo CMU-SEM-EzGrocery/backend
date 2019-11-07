@@ -47,6 +47,7 @@ public class OrderHttpInterface extends HttpInterface{
             );
             Order newOrder = new Order(
                     json.getString("phoneNumber"),
+                    json.getDouble("fee"),
                     json.getString("slotStart"),
                     json.getString("slotEnd"),
                     startAddr,

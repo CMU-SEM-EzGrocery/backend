@@ -8,11 +8,12 @@ public class Order {
     private Address endAddr;
     private int status;
     private String helperNum;
-    private int fee;
+    private double fee;
 
-    public Order(String phoneNum, String slotStart, String slotEnd,
+    public Order(String phoneNum, double fee, String slotStart, String slotEnd,
                  Address startAddr, Address endAddr, int status) {
         this.phoneNum = phoneNum;
+        this.fee = fee;
         this.slotStart = slotStart;
         this.slotEnd = slotEnd;
         this.startAddr = startAddr;
@@ -76,11 +77,11 @@ public class Order {
         this.helperNum = helperNum;
     }
 
-    public int getFee() {
+    public double getFee() {
         return fee;
     }
 
-    public void setFee(int fee) {
+    public void setFee(double fee) {
         this.fee = fee;
     }
 }

@@ -72,6 +72,7 @@ public class OrderManager extends Manager{
 
                 Order order = new Order(
                         orderDoc.getString("phoneNumber"),
+                        orderDoc.getDouble("fee"),
                         orderDoc.getString("slotStart"),
                         orderDoc.getString("slotEnd"),
                         startAddr,

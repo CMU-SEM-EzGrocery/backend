@@ -39,6 +39,11 @@ public class UserHttpInterface extends HttpInterface{
         try {
             JSONObject json = null;
             json = new JSONObject(ow.writeValueAsString(request));
+            ArrayList<User> users = UserManager.getInstance().getUserByPhone(json.getString("phoneNumber"));
+            if(!users.isEmpty()) {
+                return new AppResponse(500,
+                        "The user with this phone number already exists.");
+            }
 
             // Generate Salt. The generated value can be stored in DB.
             String salt = PasswordUtils.getSalt(30);
@@ -53,14 +58,6 @@ public class UserHttpInterface extends HttpInterface{
 
             );
             User newUser = new User(
-                    json.getString("firstName"),
-                    json.getString("lastName"),
-                    json.getString("roleId"),
-                    json.getString("phoneNumber"),
-                    mySecurePassword,
-                    salt
-            );
-            User newUser1 = new User(
                     null,
                     json.getString("firstName"),
                     json.getString("lastName"),
@@ -73,7 +70,7 @@ public class UserHttpInterface extends HttpInterface{
                     json.getString("rating"),
                     addr
             );
-            UserManager.getInstance().createUser(newUser1);
+            UserManager.getInstance().createUser(newUser);
             return new AppResponse("Insert new user Successful");
 
         } catch (Exception e){
@@ -148,8 +145,29 @@ public class UserHttpInterface extends HttpInterface{
 
         try {
             json = new JSONObject(ow.writeValueAsString(request));
+            ArrayList<User> users = UserManager.getInstance().getUserByPhone(phoneNumber);
+            if(users.isEmpty()) {
+                return new AppResponse(500,
+                        "The user with this phone number does not exists.");
+            }
+            Address addr = new Address(
+                    json.getString("address"),
+                    json.getString("longitude"),
+                    json.getString("latitude")
+
+            );
             User user = new User(
-                    phoneNumber
+                    null,
+                    json.getString("firstName"),
+                    json.getString("lastName"),
+                    json.getString("roleId"),
+                    phoneNumber,
+                    null,
+                    null,
+                    json.getString("currency"),
+                    json.getString("language"),
+                    json.getString("rating"),
+                    addr
             );
 
             UserManager.getInstance().updateUser(user);
@@ -168,8 +186,13 @@ public class UserHttpInterface extends HttpInterface{
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public AppResponse deleteUsers(@PathParam("phoneNumber") String phoneNumber){
-
         try {
+            JSONObject json = null;
+            ArrayList<User> users = UserManager.getInstance().getUserByPhone(phoneNumber);
+            if(users.isEmpty()) {
+                return new AppResponse(500,
+                        "The user with this phone number does not exists.");
+            }
             UserManager.getInstance().deleteUser(phoneNumber);
             return new AppResponse("Delete Successful");
         } catch (Exception e) {

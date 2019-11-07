@@ -66,11 +66,16 @@ public class UserManager extends Manager {
 
     public void updateUser( User user) throws AppException {
         try {
-            Bson filter = new Document("_id", new ObjectId(user.getId()));
+            Bson filter = new Document("phoneNumber", user.getPhoneNumber());
             Bson newValue = new Document()
                     .append("firstName", user.getFirstName())
-                    .append("password", user.getPassword())
-                    .append("email",user.getEmail());
+                    .append("lastName", user.getLastName())
+                    .append("roleId", user.getRoleId())
+                    .append("currency", user.getCurrency())
+                    .append("language", user.getLanguage())
+                    .append("longitude", user.getAddr().getLongitude())
+                    .append("latitude", user.getAddr().getLatitude())
+                    .append("address",user.getAddr().getAddress());
             Bson updateOperationDocument = new Document("$set", newValue);
 
             if (newValue != null)
