@@ -1,14 +1,22 @@
 package edu.cmu.andrew.karim.server.utils;
 
 import edu.cmu.andrew.karim.server.managers.UserManager;
+import edu.cmu.andrew.karim.server.models.Order;
 import edu.cmu.andrew.karim.server.models.User;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 public class Calculator {
+    public static Calculator _self;
 
+    public static Calculator getInstance(){
+        if (_self == null)
+            _self = new Calculator();
+        return _self;
+    }
     //Estimate the Service Fee based on the distance and the service time.
     //As of now, the service is paid by cash, so our platform won't charge service fee or say transaction fee.
     //The fee estimation is only based on 3 factors
@@ -27,7 +35,13 @@ public class Calculator {
         double feeinDollar = driverFeeinDollar(start_lat,start_lng,end_lat,end_lng,startTime);
         if (currencyType ==
     }*/
-    public static double driverFeeinDollar(double start_lat, double start_lng, double end_lat, double end_lng, String startTime) {
+    public double driverFeeinDollar(Order order) {
+        double start_lat = Double.parseDouble(order.getStartAddr().getLatitude());
+        double start_lng = Double.parseDouble(order.getStartAddr().getLongitude());
+        double end_lat = Double.parseDouble(order.getEndAddr().getLatitude());
+        double end_lng = Double.parseDouble(order.getEndAddr().getLongitude());
+        String startTime = order.getSlotStart();
+
         double mileRate = 0.2;
         int serviceFee = 2;
         int rushHourRate = 2;
@@ -37,7 +51,7 @@ public class Calculator {
         rushHours.add("8");
         rushHours.add("17");
         rushHours.add("18");
-        double rushHourFee = rushHours.contains(startTime)?rushHourRate:0;
+        double rushHourFee = rushHours.contains(startTime) ? rushHourRate : 0;
         double distance = distance(start_lat, start_lng, end_lat, end_lng);
         fee = mileRate*distance + rushHourFee + serviceFee;
         return fee;

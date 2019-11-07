@@ -6,7 +6,7 @@ import edu.cmu.andrew.karim.server.exceptions.AppException;
 import edu.cmu.andrew.karim.server.exceptions.AppInternalServerException;
 import edu.cmu.andrew.karim.server.models.Address;
 import edu.cmu.andrew.karim.server.models.Order;
-import edu.cmu.andrew.karim.server.models.User;
+import edu.cmu.andrew.karim.server.utils.Calculator;
 import edu.cmu.andrew.karim.server.utils.MongoPool;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -29,21 +29,22 @@ public class OrderManager extends Manager{
         return _self;
     }
 
-    public void createOrder(Order oder) throws AppException {
+    public void createOrder(Order order) throws AppException {
         try {
-            JSONObject json = new JSONObject(oder);
-
+            JSONObject json = new JSONObject(order);
+            double fee = Calculator.getInstance().driverFeeinDollar(order);
             Document newDoc = new Document()
-                    .append("phoneNumber", oder.getPhoneNum())
-                    .append("slotStart", oder.getSlotStart())
-                    .append("slotEnd", oder.getSlotEnd())
-                    .append("startAddr", oder.getStartAddr().getAddress())
-                    .append("startLongitude", oder.getStartAddr().getLongitude())
-                    .append("startLatitude", oder.getStartAddr().getLatitude())
-                    .append("endAddr", oder.getEndAddr().getAddress())
-                    .append("endLongitude", oder.getEndAddr().getLongitude())
-                    .append("endLatitude", oder.getEndAddr().getLatitude())
-                    .append("status",oder.getStatus());
+                    .append("phoneNumber", order.getPhoneNum())
+                    .append("fee", fee)
+                    .append("slotStart", order.getSlotStart())
+                    .append("slotEnd", order.getSlotEnd())
+                    .append("startAddr", order.getStartAddr().getAddress())
+                    .append("startLongitude", order.getStartAddr().getLongitude())
+                    .append("startLatitude", order.getStartAddr().getLatitude())
+                    .append("endAddr", order.getEndAddr().getAddress())
+                    .append("endLongitude", order.getEndAddr().getLongitude())
+                    .append("endLatitude", order.getEndAddr().getLatitude())
+                    .append("status",order.getStatus());
             if (newDoc != null)
                 orderCollection.insertOne(newDoc);
             else
@@ -51,6 +52,32 @@ public class OrderManager extends Manager{
 
         } catch (Exception e) {
             throw handleException("Create Order", e);
+        }
+    }
+
+    public void updateOrder(Order order) throws AppException {
+        try {
+            Bson filter = new Document("phoneNumber", order.getPhoneNum());
+            Bson newValue = new Document()
+                    .append("phoneNumber", order.getPhoneNum())
+                    .append("fee", order.getFee())
+                    .append("slotStart", order.getSlotStart())
+                    .append("slotEnd", order.getSlotEnd())
+                    .append("startAddr", order.getStartAddr().getAddress())
+                    .append("startLongitude", order.getStartAddr().getLongitude())
+                    .append("startLatitude", order.getStartAddr().getLatitude())
+                    .append("endAddr", order.getEndAddr().getAddress())
+                    .append("endLongitude", order.getEndAddr().getLongitude())
+                    .append("endLatitude", order.getEndAddr().getLatitude())
+                    .append("status",order.getStatus());
+            Bson updateOperationDocument = new Document("$set", newValue);
+
+            if (newValue != null)
+                orderCollection.updateOne(filter, updateOperationDocument);
+            else
+                throw new AppInternalServerException(0, "Failed to update order details");
+        } catch (Exception e) {
+            throw handleException("Update Order", e);
         }
     }
 
@@ -83,6 +110,40 @@ public class OrderManager extends Manager{
             }
             return new ArrayList<>(orderList);
         } catch (Exception e) {
+            throw handleException("Get Order List", e);
+        }
+    }
+
+    public ArrayList<Order> getOrderByPhone(String phoneNumber) throws AppException {
+        try{
+            ArrayList<Order> orderList = new ArrayList<>();
+            Bson filter = new Document("phoneNumber", phoneNumber);
+            FindIterable<Document> orderDocs = orderCollection.find(filter);
+            for(Document orderDoc: orderDocs) {
+                Address startAddr = new Address(
+                        orderDoc.getString("startAddr"),
+                        orderDoc.getString("startLongitude"),
+                        orderDoc.getString("startLatitude")
+                );
+                Address endAddr = new Address(
+                        orderDoc.getString("endAddr"),
+                        orderDoc.getString("endLongitude"),
+                        orderDoc.getString("endLatitude")
+                );
+
+                Order order = new Order(
+                        orderDoc.getString("phoneNumber"),
+                        orderDoc.getDouble("fee"),
+                        orderDoc.getString("slotStart"),
+                        orderDoc.getString("slotEnd"),
+                        startAddr,
+                        endAddr,
+                        orderDoc.getInteger("status")
+                );
+                orderList.add(order);
+            }
+            return new ArrayList<>(orderList);
+        } catch(Exception e) {
             throw handleException("Get Order List", e);
         }
     }

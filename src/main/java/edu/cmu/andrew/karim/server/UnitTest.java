@@ -44,8 +44,9 @@ public class UnitTest {
             System.out.println("Exception in matching helpers" + e);
         }
 
-        double fee = Calculator.driverFeeinDollar(Double.parseDouble(start_lat), Double.parseDouble(start_lng),
-                Double.parseDouble(end_lat), Double.parseDouble(end_lng), startTime);
+        double fee = 0;
+//        double fee = Calculator.getInstance().driverFeeinDollar(Double.parseDouble(start_lat), Double.parseDouble(start_lng),
+//                Double.parseDouble(end_lat), Double.parseDouble(end_lng), startTime);
 
         System.out.println("The estimation fee in dollar is " + fee);
     }

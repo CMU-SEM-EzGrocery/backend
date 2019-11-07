@@ -142,7 +142,6 @@ public class UserHttpInterface extends HttpInterface{
     public AppResponse patchUsers(Object request, @PathParam("phoneNumber") String phoneNumber){
 
         JSONObject json = null;
-
         try {
             json = new JSONObject(ow.writeValueAsString(request));
             ArrayList<User> users = UserManager.getInstance().getUserByPhone(phoneNumber);
@@ -177,9 +176,6 @@ public class UserHttpInterface extends HttpInterface{
         }
         return new AppResponse("Update Successful");
     }
-
-
-
 
     @DELETE
     @Path("/{phoneNumber}")
