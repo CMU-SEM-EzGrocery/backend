@@ -1,5 +1,7 @@
 package edu.cmu.andrew.karim.server.models;
 
+import java.util.List;
+
 public class Order {
     private String phoneNum;
     private String slotStart;
@@ -7,8 +9,12 @@ public class Order {
     private Address startAddr;
     private Address endAddr;
     private int status;
-    private String helperNum;
+    private List<Object> helperList;
     private double fee;
+
+    public Order(String phoneNum) {
+        this.phoneNum = phoneNum;
+    }
 
     public Order(String phoneNum, double fee, String slotStart, String slotEnd,
                  Address startAddr, Address endAddr, int status) {
@@ -69,12 +75,12 @@ public class Order {
         this.status = status;
     }
 
-    public String getHelperNum() {
-        return helperNum;
+    public List<Object> getHelperList() {
+        return helperList;
     }
 
-    public void setHelperNum(String helperNum) {
-        this.helperNum = helperNum;
+    public void setHelperList(List<Object> helperList) {
+        this.helperList = helperList;
     }
 
     public double getFee() {

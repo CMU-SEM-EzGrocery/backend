@@ -13,6 +13,7 @@ import org.bson.conversions.Bson;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class OrderManager extends Manager{
 
@@ -33,14 +34,22 @@ public class OrderManager extends Manager{
         try {
             JSONObject json = new JSONObject(order);
             double fee = Calculator.getInstance().driverFeeinDollar(order);
+            String phoneNumber = order.getPhoneNum();
+            String startLongitude = order.getStartAddr().getLongitude();
+            String startLatitude = order.getStartAddr().getLatitude();
+
+            List<String> helperList = Calculator.getInstance()
+                    .helperRecommendation(phoneNumber, startLongitude, startLatitude);
+
             Document newDoc = new Document()
-                    .append("phoneNumber", order.getPhoneNum())
+                    .append("phoneNumber", phoneNumber)
                     .append("fee", fee)
+                    .append("helperList", helperList)
                     .append("slotStart", order.getSlotStart())
                     .append("slotEnd", order.getSlotEnd())
                     .append("startAddr", order.getStartAddr().getAddress())
-                    .append("startLongitude", order.getStartAddr().getLongitude())
-                    .append("startLatitude", order.getStartAddr().getLatitude())
+                    .append("startLongitude", startLongitude)
+                    .append("startLatitude", startLatitude)
                     .append("endAddr", order.getEndAddr().getAddress())
                     .append("endLongitude", order.getEndAddr().getLongitude())
                     .append("endLatitude", order.getEndAddr().getLatitude())
@@ -61,6 +70,7 @@ public class OrderManager extends Manager{
             Bson newValue = new Document()
                     .append("phoneNumber", order.getPhoneNum())
                     .append("fee", order.getFee())
+                    .append("helperList", order.getHelperList())
                     .append("slotStart", order.getSlotStart())
                     .append("slotEnd", order.getSlotEnd())
                     .append("startAddr", order.getStartAddr().getAddress())
@@ -78,6 +88,23 @@ public class OrderManager extends Manager{
                 throw new AppInternalServerException(0, "Failed to update order details");
         } catch (Exception e) {
             throw handleException("Update Order", e);
+        }
+    }
+    public void updateHelper(Order order) throws AppException {
+        try {
+            Bson filter = new Document("phoneNumber", order.getPhoneNum());
+            Bson newValue = new Document()
+                    .append("phoneNumber", order.getPhoneNum())
+                    .append("helperList", order.getHelperList())
+                    .append("status",order.getStatus());
+            Bson updateOperationDocument = new Document("$set", newValue);
+
+            if (newValue != null)
+                orderCollection.updateOne(filter, updateOperationDocument);
+            else
+                throw new AppInternalServerException(0, "Failed to update order details");
+        } catch (Exception e) {
+            throw handleException("Update Order helper", e);
         }
     }
 
@@ -106,6 +133,7 @@ public class OrderManager extends Manager{
                         endAddr,
                         orderDoc.getInteger("status")
                 );
+                order.setHelperList((List<Object>) orderDoc.get("helperList"));
                 orderList.add(order);
             }
             return new ArrayList<>(orderList);
@@ -140,6 +168,7 @@ public class OrderManager extends Manager{
                         endAddr,
                         orderDoc.getInteger("status")
                 );
+                order.setHelperList((List<Object>) orderDoc.get("helperList"));
                 orderList.add(order);
             }
             return new ArrayList<>(orderList);

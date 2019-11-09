@@ -36,7 +36,8 @@ public class UnitTest {
 
         try {
             System.out.println("Following ids are phone numbers of recommended helpers");
-            List<String> userPhoneIdList = Calculator.helperRecommendation(requesterId, start_lat, start_lng);
+            List<String> userPhoneIdList = Calculator.getInstance()
+                    .helperRecommendation(requesterId, start_lng, start_lat);
             for (String id : userPhoneIdList) {
                 System.out.println(id);
             }

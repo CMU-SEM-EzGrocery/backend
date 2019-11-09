@@ -20,6 +20,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Path("/orders")
 public class OrderHttpInterface extends HttpInterface{
@@ -38,6 +40,12 @@ public class OrderHttpInterface extends HttpInterface{
         try {
             JSONObject json = null;
             json = new JSONObject(ow.writeValueAsString(request));
+            ArrayList<User> users = UserManager.getInstance().getUserByPhone(json.getString("phoneNumber"));
+            if(users.isEmpty()) {
+                return new AppResponse(500,
+                        "The order and user with this phone number does not exists.");
+            }
+
             ArrayList<Order> orders = OrderManager.getInstance().getOrderByPhone(json.getString("phoneNumber"));
             if(!orders.isEmpty()) {
                 return new AppResponse(500,
@@ -103,6 +111,7 @@ public class OrderHttpInterface extends HttpInterface{
                     endAddr,
                     1
             );
+            newOrder.setHelperList(json.getJSONArray("helperList").toList());
 
             OrderManager.getInstance().updateOrder(newOrder);
 
@@ -110,6 +119,38 @@ public class OrderHttpInterface extends HttpInterface{
             throw handleException("PATCH orders/{phoneNumber}", e);
         }
         return new AppResponse("Update Successful");
+    }
+
+    @PATCH
+    @Path("/{phoneNumber}/helper")
+    @Consumes({ MediaType.APPLICATION_JSON})
+    @Produces({ MediaType.APPLICATION_JSON})
+    public AppResponse updateHelper(Object request, @PathParam("phoneNumber") String phoneNumber){
+
+        JSONObject json = null;
+        try {
+            json = new JSONObject(ow.writeValueAsString(request));
+            ArrayList<Order> orders = OrderManager.getInstance().getOrderByPhone(phoneNumber);
+            if(orders.isEmpty()) {
+                return new AppResponse(500,
+                        "The order with this phone number does not exists.");
+            }
+
+            Order newOrder = new Order(
+                    phoneNumber
+            );
+            String helper = json.getString("helper");
+            List<String> helperList = new ArrayList<>();
+            helperList.add(helper);
+            newOrder.setHelperList(Collections.singletonList(helperList));
+            newOrder.setStatus(1);
+
+            OrderManager.getInstance().updateHelper(newOrder);
+
+        } catch (Exception e){
+            throw handleException("PATCH orders/{phoneNumber}/helper", e);
+        }
+        return new AppResponse("Update new helper successful");
     }
 
     @GET

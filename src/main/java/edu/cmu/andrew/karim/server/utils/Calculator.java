@@ -1,5 +1,6 @@
 package edu.cmu.andrew.karim.server.utils;
 
+import edu.cmu.andrew.karim.server.managers.OrderManager;
 import edu.cmu.andrew.karim.server.managers.UserManager;
 import edu.cmu.andrew.karim.server.models.Order;
 import edu.cmu.andrew.karim.server.models.User;
@@ -63,8 +64,7 @@ public class Calculator {
     private static double distance(double lat1, double lon1, double lat2, double lon2) {
         if ((lat1 == lat2) && (lon1 == lon2)) {
             return 0;
-        }
-        else {
+        } else {
             double theta = lon1 - lon2;
             double dist = Math.sin(Math.toRadians(lat1)) * Math.sin(Math.toRadians(lat2)) + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * Math.cos(Math.toRadians(theta));
             dist = Math.acos(dist);
@@ -88,18 +88,16 @@ public class Calculator {
 
     //TODO: language is a list
     //TODO: the currencyfield of a helper should be a list of currencies that he can accept, separated by ","
-    public static List<String> helperRecommendation(String requesterId, String start_lat, String start_lng) throws Exception {
+    public List<String> helperRecommendation(String requesterId, String start_lng, String start_lat) throws Exception {
         List<String> recommendedHelpers = new ArrayList<>();
-        List<String> helperList = new ArrayList<>();
-        UserManager userManager = new UserManager();
-        User requester = userManager.getUserByPhone(requesterId).get(0);
-        //Requester Data
-        String requesterLanguage = requester.getLanguage();
-        String requesterCurrency = requester.getCurrency();
 
-        UserManager um = new UserManager();
         try {
-            List<User> helpList = um.getHelperList(requesterCurrency,requesterLanguage);
+            User requester = UserManager.getInstance().getUserByPhone(requesterId).get(0);
+
+            //Requester Data
+            String requesterLanguage = requester.getLanguage();
+            String requesterCurrency = requester.getCurrency();
+            List<User> helpList = UserManager.getInstance().getHelperList(requesterCurrency,requesterLanguage);
 
             //TODO: in future when we have more users in DB, the helpList will have a limitation size,like40
             for (User helper:helpList) {
@@ -112,7 +110,7 @@ public class Calculator {
                         break;
                 }
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new Exception(e);
         }
 
