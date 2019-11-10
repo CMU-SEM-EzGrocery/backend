@@ -12,16 +12,37 @@ public class User {
     private String salt;
     private String preferredMarket;
     private String currency;
+    private String language;
+    private String rating;
     private String email;
     private String userAvatar;
+    private Address addr;
 
-    public User(String firstName, String lastName, String roleId, String phoneNumber, String password, String salt) {
+    public User(String firstName, String lastName, String roleId,
+                String phoneNumber, String password, String salt) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.roleId = roleId;
         this.phoneNumber = phoneNumber;
         this.password = password;
         this.salt = salt;
+    }
+
+    public User(String id, String firstName, String lastName,
+                String roleId, String phoneNumber, String password,
+                String salt, String currency, String language,
+                String rating, Address addr) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.roleId = roleId;
+        this.phoneNumber = phoneNumber;
+        this.password = password;
+        this.salt = salt;
+        this.currency = currency;
+        this.language = language;
+        this.rating = rating;
+        this.addr = addr;
     }
 
     public User(String phoneNumber) {
@@ -114,5 +135,29 @@ public class User {
 
     public void setUserAvatar(String userAvatar) {
         this.userAvatar = userAvatar;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    public String getRating() {
+        return rating;
+    }
+
+    public void setRating(String rating) {
+        this.rating = rating;
+    }
+
+    public Address getAddr() {
+        return addr;
+    }
+
+    public void setAddr(Address addr) {
+        this.addr = addr;
     }
 }

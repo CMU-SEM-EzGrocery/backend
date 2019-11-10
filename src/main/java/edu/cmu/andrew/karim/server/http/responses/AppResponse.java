@@ -9,6 +9,8 @@ public class AppResponse {
         this.data = dataParam;
     }
 
-    public AppResponse() {
+    public AppResponse(int httpStatusCode, Object dataParam) {
+        this.httpStatusCode = httpStatusCode;
+        this.data = dataParam;
     }
 }

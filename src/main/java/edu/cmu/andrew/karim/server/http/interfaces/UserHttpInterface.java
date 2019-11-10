@@ -7,6 +7,7 @@ import com.mongodb.client.MongoCollection;
 import edu.cmu.andrew.karim.server.http.exceptions.HttpBadRequestException;
 import edu.cmu.andrew.karim.server.http.responses.AppResponse;
 import edu.cmu.andrew.karim.server.http.utils.PATCH;
+import edu.cmu.andrew.karim.server.models.Address;
 import edu.cmu.andrew.karim.server.models.User;
 import edu.cmu.andrew.karim.server.managers.UserManager;
 import edu.cmu.andrew.karim.server.utils.*;
@@ -38,6 +39,11 @@ public class UserHttpInterface extends HttpInterface{
         try {
             JSONObject json = null;
             json = new JSONObject(ow.writeValueAsString(request));
+            ArrayList<User> users = UserManager.getInstance().getUserByPhone(json.getString("phoneNumber"));
+            if(!users.isEmpty()) {
+                return new AppResponse(500,
+                        "The user with this phone number already exists.");
+            }
 
             // Generate Salt. The generated value can be stored in DB.
             String salt = PasswordUtils.getSalt(30);
@@ -45,13 +51,24 @@ public class UserHttpInterface extends HttpInterface{
             // Protect user's password. The generated value can be stored in DB.
             String mySecurePassword = PasswordUtils.generateSecurePassword(json.getString("password"), salt);
 
+            Address addr = new Address(
+                    json.getString("address"),
+                    json.getString("longitude"),
+                    json.getString("latitude")
+
+            );
             User newUser = new User(
+                    null,
                     json.getString("firstName"),
                     json.getString("lastName"),
                     json.getString("roleId"),
                     json.getString("phoneNumber"),
                     mySecurePassword,
-                    salt
+                    salt,
+                    json.getString("currency"),
+                    json.getString("language"),
+                    json.getString("rating"),
+                    addr
             );
             UserManager.getInstance().createUser(newUser);
             return new AppResponse("Insert new user Successful");
@@ -78,8 +95,6 @@ public class UserHttpInterface extends HttpInterface{
         } catch (Exception e){
             throw handleException("GET /users", e);
         }
-
-
     }
 
     @GET
@@ -95,11 +110,28 @@ public class UserHttpInterface extends HttpInterface{
                 return new AppResponse(users);
             else
                 throw new HttpBadRequestException(0, "Problem with getting users");
-        } catch (Exception e){
+        } catch (Exception e) {
             throw handleException("GET /users/{userId}", e);
         }
+    }
 
+    @GET
+    @Path("/helper")
+    @Produces({MediaType.APPLICATION_JSON})
+    public AppResponse getHelpers(@Context HttpHeaders headers,
+                                     @QueryParam("currency") String currency,
+                                     @QueryParam("language") String language){
+        try {
+            AppLogger.info("Got an API call");
+            ArrayList<User> users = UserManager.getInstance().getHelperList(currency, language);
 
+            if(users != null)
+                return new AppResponse(users);
+            else
+                throw new HttpBadRequestException(0, "Problem with getting users");
+        } catch (Exception e) {
+            throw handleException("GET /users/helper", e);
+        }
     }
 
 
@@ -110,11 +142,31 @@ public class UserHttpInterface extends HttpInterface{
     public AppResponse patchUsers(Object request, @PathParam("phoneNumber") String phoneNumber){
 
         JSONObject json = null;
-
         try {
             json = new JSONObject(ow.writeValueAsString(request));
+            ArrayList<User> users = UserManager.getInstance().getUserByPhone(phoneNumber);
+            if(users.isEmpty()) {
+                return new AppResponse(500,
+                        "The user with this phone number does not exists.");
+            }
+            Address addr = new Address(
+                    json.getString("address"),
+                    json.getString("longitude"),
+                    json.getString("latitude")
+
+            );
             User user = new User(
-                    phoneNumber
+                    null,
+                    json.getString("firstName"),
+                    json.getString("lastName"),
+                    json.getString("roleId"),
+                    phoneNumber,
+                    null,
+                    null,
+                    json.getString("currency"),
+                    json.getString("language"),
+                    json.getString("rating"),
+                    addr
             );
 
             UserManager.getInstance().updateUser(user);
@@ -122,20 +174,21 @@ public class UserHttpInterface extends HttpInterface{
         } catch (Exception e){
             throw handleException("PATCH users/{phoneNumber}", e);
         }
-
         return new AppResponse("Update Successful");
     }
-
-
-
 
     @DELETE
     @Path("/{phoneNumber}")
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON })
     public AppResponse deleteUsers(@PathParam("phoneNumber") String phoneNumber){
-
         try {
+            JSONObject json = null;
+            ArrayList<User> users = UserManager.getInstance().getUserByPhone(phoneNumber);
+            if(users.isEmpty()) {
+                return new AppResponse(500,
+                        "The user with this phone number does not exists.");
+            }
             UserManager.getInstance().deleteUser(phoneNumber);
             return new AppResponse("Delete Successful");
         } catch (Exception e) {
